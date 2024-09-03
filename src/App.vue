@@ -1,31 +1,62 @@
 <template>
   <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </nav>
-    <router-view/>
+    <!-- 头部 -->
+    <Header></Header>
+    <!-- 侧边 -->
+    <Aside></Aside>
+    <!-- 主体 -->
+    <Main> </Main>
+    <!-- 底部 -->
+    <Footer></Footer>
   </div>
 </template>
 
+<script>
+import Header from "@/Layout/Header.vue";
+import Footer from "@/Layout/Footer.vue";
+import Aside from "@/Layout/Aside.vue";
+import Main from "@/Layout/Main.vue";
+export default {
+  name: "App",
+  components: {
+    Header,
+    Footer,
+    Aside,
+    Main,
+  },
+};
+</script>
+
 <style lang="less">
+@import "assets/css/base.css";
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+  display: grid;
+  grid-template-columns: 0.3fr 1fr 1fr;
+  grid-template-rows: 0.1fr 1fr 0.1fr;
+  grid-template-areas:
+    "sidebar header header"
+    "sidebar content content"
+    "footer footer footer";
+  height: 100vh;
+  .create-isLoading {
+    .el-loading-spinner {
+      top: 50%;
+      left: 50%;
+      margin-left: -55px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 4px;
+      width: auto;
+      text-align: center;
+      position: absolute;
 
-nav {
-  padding: 30px;
+      i {
+        color: #eee;
+      }
 
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
+      .el-loading-text {
+        color: #eee;
+      }
     }
   }
 }

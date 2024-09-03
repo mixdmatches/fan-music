@@ -1,0 +1,50 @@
+/* 覆盖 element-ui 菜单项的默认样式 */
+.el-menu-item {
+  background-color: transparent;
+  /* 设置背景颜色为透明 */
+  border: none;
+  /* 移除边框 */
+}
+
+
+/* 覆盖 element-ui 菜单项图标的默认样式 */
+.iconfont {
+  color: initial;
+  /* 恢复图标颜色为初始值 */
+}
+
+/* 覆盖 element-ui 菜单项文本的默认样式 */
+.el-menu-item p {
+  color: initial;
+  /* 恢复文本颜色为初始值 */
+}
+
+#el-menu-item,
+.el-submenu__title {
+  /* height: 56px; */
+  /* line-height: 56px; */
+  list-style: none;
+}
+
+/* 重新设置加载动画样式 */
+.create-isLoading {
+  .el-loading-spinner {
+    top: 50%;
+    left: 50%;
+    margin-left: -55px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 4px;
+    width: auto;
+    text-align: center;
+    position: absolute;
+
+    i {
+      color: #eee;
+    }
+
+    .el-loading-text {
+      color: #eee;
+    }
+  }
+}

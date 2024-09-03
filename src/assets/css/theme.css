@@ -1,0 +1,21 @@
+:root {
+  --base-main: rgb(247, 249, 252);
+  --base-header: rgb(247, 249, 252);
+  --base-footer: rgb(250, 250, 250);
+  --base-aside: rgb(240, 243, 246);
+  --text-color: #787f8d;
+  --text-select-color: black;
+  --text-select-box: white;
+  --border-color: #ccc
+}
+
+[data-theme="dark"] {
+  --base-main: rgb(19, 19, 26);
+  --base-header: rgb(19, 19, 26);
+  --base-footer: rgb(45, 45, 56);
+  --base-aside: rgb(26, 26, 33);
+  --text-color: #787f8d;
+  --text-select-color: white;
+  --text-select-box: rgb(33, 33, 39);
+  --border-color: #2c2c2c
+}
