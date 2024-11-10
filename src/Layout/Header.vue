@@ -13,8 +13,16 @@
       </span>
     </div>
     <div class="header-right">
-      <span v-if="userInfo" @click="loginOut" class="work">退出登录</span>
-      <img @click="showLogin" src="@/assets/images/singerload.png" alt="" />
+      <span v-if="userInfo" @click="showLoginOut" class="work">退出登录</span>
+      <img
+        @click="showLogin"
+        v-bind:src="
+          userInfo
+            ? userInfo.avatarUrl
+            : require('@/assets/images/singerload.png')
+        "
+        alt=""
+      />
       <p @click="showLogin">
         {{ userInfo ? userInfo.nickname : "未登录" }}
       </p>
@@ -28,8 +36,12 @@
         <i class="bi bi-moon"></i>
       </span>
     </div>
-    <LoginModal ref="LoginModal"></LoginModal>
-    <loginOutPop ref="loginOutPop"></loginOutPop>
+    <transition name="el-fade-in-linear">
+      <LoginModal v-if="showLoginModal" @closeLogin="closeLogin"></LoginModal>
+    </transition>
+    <transition name="el-fade-in-linear">
+      <LoginOutPop v-if="showOut" @closeLoginOut="closeLoginOut"></LoginOutPop>
+    </transition>
   </div>
 </template>
 
@@ -37,7 +49,7 @@
 import { loginOut, loginStatus } from "@/api/login/login";
 // 引入登录弹窗组件
 import LoginModal from "@/components/LoginModal.vue";
-import loginOutPop from "@/components/loginOutPop.vue";
+import LoginOutPop from "@/components/LoginOutPop.vue";
 // vuex
 import { mapGetters } from "vuex";
 import { userInfo } from "@/store/getters";
@@ -45,15 +57,14 @@ export default {
   name: "Header",
   components: {
     LoginModal,
-    loginOutPop,
+    LoginOutPop,
   },
   data() {
     return {
       // 搜索词
       keyWord: "",
-      avatarUrl: userInfo.avatarUrl
-        ? userInfo.avatarUrl
-        : "@/assets/images/singerload.png",
+      showLoginModal: false,
+      showOut: false,
     };
   },
   computed: {
@@ -98,25 +109,27 @@ export default {
         query: { keyword: keyWord },
       });
     },
-    // 控制弹窗出现
+    
+    // 控制登录弹窗出现
     showLogin() {
       // 如果已经登录
       if (this.isLogin) {
         return;
       }
       // 没有的话
-      this.$refs.LoginModal.show = true;
+      this.showLoginModal = true;
     },
-    // 退出登录
-    async loginOut() {
-      console.log("退出登录");
-      localStorage.removeItem("cookie");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("isLogin");
-      await loginOut().then((res) => {
-        console.log(res);
-      });
-      location.reload();
+    // 控制登录弹窗关闭
+    closeLogin(){
+      this.showLoginModal = false;
+    },
+    // 控制退出弹窗出现
+    showLoginOut() {
+      this.showOut = true;
+    },
+    // 退出弹窗关闭
+    closeLoginOut() {
+      this.showOut = false;
     },
   },
 };

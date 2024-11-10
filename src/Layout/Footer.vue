@@ -3,7 +3,6 @@
     <audio
       :src="songUrl"
       id="audio"
-      autoplay
       ref="audioplay"
       @play="changeState(true)"
       @pause="changeState(false)"

@@ -92,7 +92,7 @@
             <!-- 喜欢 -->
             <span class="like">
               <span class="love">
-                <i class="bi bi-heart"></i>
+                <i class="bi bi-heart-fill"></i>
               </span>
             </span>
             <!-- 时长 -->
@@ -145,9 +145,15 @@
           </div>
         </div>
       </div>
-      <div class="empty" v-else>暂无评论</div>
+      <div
+        class="empty"
+        v-if="
+          type === 2 && loveComments.length === 0 && hotComments.length === 0
+        "
+      >
+        暂无评论
+      </div>
     </div>
-    <LoginModal ref="LoginModal"></LoginModal>
   </div>
 </template>
 
@@ -230,15 +236,6 @@ export default {
         console.log(this.hotComments);
         console.log(this.loveComments);
       });
-    },
-    // 控制弹窗出现
-    showLogin() {
-      // 如果已经登录
-      if (this.isLogin) {
-        return;
-      }
-      // 没有的话
-      this.$refs.LoginModal.show = true;
     },
   },
   created() {
@@ -450,7 +447,7 @@ export default {
             // text-align: center;
             padding-left: 10px;
             width: 5%;
-            color: rgb(143, 149, 162);
+            color: rgb(255, 0, 0);
             font-size: 12px;
           }
           .totalTime {

@@ -39,7 +39,7 @@ instance.interceptors.request.use(function (config) {
   //   config.headers['Access-Token'] = token
   //   config.headers.platform = 'H5'
   // }
-  startLoading()
+  // startLoading()
   return config
 }, function (error) {
   // 对请求错误做些什么
@@ -55,7 +55,7 @@ instance.interceptors.response.use(function (response) {
     // 错误情况
     // Toast(res.message)
     // return Promise.reject(res.message)
-    endLoading()
+    // endLoading()
   } else {
     // 成功情况
     // Toast.clear()

@@ -1,55 +1,61 @@
 <template>
-  <div v-if="show" class="login-modal">
-    <!-- 手机号登陆 -->
-    <div class="login1" v-if="!QRway">
-      <div class="top">
-        <span @click="QRlogin">扫二维码</span>
-        <span class="close" @click="close">关闭</span>
-      </div>
-      <div class="modal-content">
-        <h2>登录</h2>
-        <form>
-          <div class="phone">
-            <input
-              type="text"
-              id="phone"
-              v-model="phoneNumber"
-              placeholder="请输入手机号"
-            />
-          </div>
-          <!-- 验证码登录 -->
-          <div class="captcha">
-            <input
-              id="captcha"
-              v-model="captcha"
-              placeholder="请输入验证码
+  <div class="login-overlay">
+    <div class="login-modal">
+      <!-- 手机号登陆 -->
+      <div class="login1" v-if="!QRway">
+        <div class="top">
+          <span @click="QRlogin">扫二维码</span>
+          <span class="close" @click="close">
+            <i class="bi bi-x"></i>
+          </span>
+        </div>
+        <div class="modal-content">
+          <h2>登录</h2>
+          <form>
+            <div class="phone">
+              <input
+                type="text"
+                id="phone"
+                v-model="phoneNumber"
+                placeholder="请输入手机号"
+              />
+            </div>
+            <!-- 验证码登录 -->
+            <div class="captcha">
+              <input
+                id="captcha"
+                v-model="captcha"
+                placeholder="请输入验证码
           "
-            />
-            <button class="code" @click="getCodeBy">
-              {{ second === totalSencond ? "获取验证码" : second }}
-            </button>
-          </div>
-          <!-- 切换验证/密码登录 -->
-          <!-- <div class="status">
+              />
+              <button class="code" @click="getCodeBy">
+                {{ second === totalSencond ? "获取验证码" : second }}
+              </button>
+            </div>
+            <!-- 切换验证/密码登录 -->
+            <!-- <div class="status">
             <span></span>
             <span @click="isPassWord = !isPassWord">{{
               isPassWord ? "验证码登录" : "密码登录"
             }}</span>
           </div> -->
-          <button type="submit" class="submit" @click="login">登录</button>
-        </form>
+            <button type="submit" class="submit" @click="login">登录</button>
+          </form>
+        </div>
       </div>
-    </div>
-    <!-- 扫二维码登录 -->
-    <div class="login2" v-if="QRway">
-      <div class="top">
-        <span class="phonelogin" @click="QRway = false">手机号登陆 ></span>
-        <span class="close" @click="close">关闭</span>
-      </div>
-      <div class="modal-content">
-        <h2>扫码登录</h2>
-        <img :src="this.qrimg" @click="QRlogin" alt="" />
-        <p>使用app扫码登陆</p>
+      <!-- 扫二维码登录 -->
+      <div class="login2" v-if="QRway">
+        <div class="top">
+          <span class="phonelogin" @click="QRway = false">手机号登陆 ></span>
+          <span class="close" @click="close">
+            <i class="bi bi-x"></i>
+          </span>
+        </div>
+        <div class="modal-content">
+          <h2>扫码登录</h2>
+          <img :src="this.qrimg" @click="QRlogin" alt="" />
+          <p>使用app扫码登陆</p>
+        </div>
       </div>
     </div>
   </div>
@@ -73,7 +79,6 @@ export default {
   data() {
     return {
       type: 0, //0:密码登录 1：验证码 2.二维码
-      show: false,
       phoneNumber: "", //手机号
       captcha: "", //验证码
       password: "", //密码
@@ -88,10 +93,8 @@ export default {
   methods: {
     // 关闭窗口
     close() {
-      if (this.timerStatus) {
-        clearInterval(this.timerStatus);
-      }
-      this.show = false;
+      clearInterval(this.timerStatus);
+      this.$emit("closeLogin");
     },
     // 验证手机号格式
     vailFn() {
@@ -212,6 +215,7 @@ export default {
       var status;
       var cookiee;
       this.timerStatus = setInterval(async () => {
+        console.log('倒计时')
         await getStatusCode(key).then((res) => {
           status = res.code;
           cookiee = res.cookie;
@@ -249,12 +253,20 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.login-modal {
-  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.5);
-  border-radius: 10px;
+.login-overlay {
   position: fixed;
-  top: 20%;
-  left: 40%;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.login-modal {
+  border-radius: 10px;
   width: 350px;
   height: 400px;
   background-color: var(--base-aside);
@@ -268,6 +280,8 @@ export default {
     .close {
       display: flex;
       justify-content: flex-end;
+      font-size: 18px;
+      cursor: pointer;
     }
   }
   .modal-content {

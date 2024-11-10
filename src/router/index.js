@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import { component } from 'vue/types/umd'
 
 // 1.发现
 const Find = () => import("../views/find/Find.vue")
