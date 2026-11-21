@@ -172,12 +172,12 @@ import BlackTabNav from "@/components/BlackTabNav.vue";
 import LoginModal from "@/components/LoginModal.vue";
 // vuex
 import { mapGetters } from "vuex";
-import { isLogin } from "@/store/getters";
 export default {
   name: "Love",
   data() {
     return {
-      uid: this.$store.state.userInfo.userId,
+      // 未登录时 userInfo 为 null，需用可选链避免空指针
+      uid: this.$store.state.userInfo?.userId,
       // loading:true,
       tabs: [
         { name: "歌曲", type: 1 },
@@ -239,8 +239,8 @@ export default {
     },
   },
   created() {
+    // 已登录才加载喜欢的音乐，未登录时模板不渲染内容
     this.getUserLikeSongBy();
-    this.showLogin();
   },
 };
 </script>

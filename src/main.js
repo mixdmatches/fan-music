@@ -17,7 +17,7 @@ Vue.config.productionTip = false
 /**使用图片懒加载**/
 import VueLazyload from "vue-lazyload";
 Vue.use(VueLazyload, {
-  loading: require("./assets/images//loadImg.gif"),
+  loading: require("./assets/images/loadImg.gif"),
   error: require("./assets/images/error.png"),
   attempt: 6,
   observer: true,

@@ -21,9 +21,13 @@
       <div class="footer-left-right">
         <!-- 歌名歌手 -->
         <div class="songInfo">
-          <p class="songName">{{ nowSongDetail.name }}-</p>
+          <p class="songName">{{ nowSongDetail.name || "" }}-</p>
           <p class="songerName">
-            {{ nowSongDetail.ar.map((item) => item.name).join("/") }}
+            {{
+              nowSongDetail.ar
+                ? nowSongDetail.ar.map((item) => item.name).join("/")
+                : ""
+            }}
           </p>
         </div>
         <!-- 收藏,评论,转发,下载-->
@@ -136,7 +140,6 @@ import { getMusicComment } from "@/api/listenMusic/listenMusic";
 // 函数
 import { formatComment } from "@/common/formatComment";
 import { formatDuration } from "@/common/formatDuration";
-import { audio, nowSongDetail, playingList } from "@/store/getters";
 
 export default {
   name: "Footer",
@@ -175,7 +178,8 @@ export default {
       "audio",
     ]),
     cover() {
-      return this.nowSongDetail.al.picUrl;
+      // 当前歌曲可能为空，需用可选链避免读取 undefined 属性报错
+      return this.nowSongDetail?.al?.picUrl || "";
     },
   },
   filters: {
@@ -196,7 +200,8 @@ export default {
     },
     // 播放音乐
     playMusic() {
-      if (playingList.length < 1) {
+      // 通过 this.playingList 读取 vuex 中的播放列表
+      if (this.playingList.length < 1) {
         this.$message({
           message: "播放列表为空",
           type: "warning",
@@ -266,7 +271,10 @@ export default {
   },
   // 页面渲染前
   created() {
-    this.getMusicCommentBy(this.nowSongDetail.id);
+    // 没有当前歌曲时不请求评论，避免无效请求
+    if (this.nowSongDetail && this.nowSongDetail.id) {
+      this.getMusicCommentBy(this.nowSongDetail.id);
+    }
   },
 };
 </script>
