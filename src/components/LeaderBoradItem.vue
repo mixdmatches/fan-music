@@ -31,29 +31,24 @@
   </div>
 </template>
 
-<script>
-import { formatNum } from "@/common/listenCount";
-export default {
-  name: "LeaderBoradItem",
-  props: {
-    commend: {
-      type: Object,
-    },
-    publicB: {
-      type: Object,
-    },
+<script setup>
+import { ref } from "vue";
+
+defineProps({
+  commend: {
+    type: Object,
   },
-  data() {
-    return {
-      currentIndex: null,
-      isMouseMove: false,
-    };
+  publicB: {
+    type: Object,
   },
-  methods: {
-    playClick() {
-      console.log("点击");
-    },
-  },
+});
+
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+
+// 点击播放
+const playClick = () => {
+  console.log("点击");
 };
 </script>
 

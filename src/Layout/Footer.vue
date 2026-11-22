@@ -36,9 +36,7 @@
           <span><i class="bi bi-folder-plus"></i></span>
           <span class="remarkcount">
             <i class="bi bi-chat-dots"></i>
-            <i class="count">{{
-              commentCount | formatComment(commentCount)
-            }}</i>
+            <i class="count">{{ formatComment(commentCount) }}</i>
           </span>
         </div>
       </div>
@@ -124,7 +122,7 @@
           </div>
           <!-- 右边 -->
           <div class="time">
-            {{ item.dt | formatDuration(item.dt) }}
+            {{ formatDuration(item.dt) }}
           </div>
         </div>
       </div>
@@ -132,151 +130,95 @@
   </div>
 </template>
 
-<script>
-// vuex
-import { mapGetters } from "vuex";
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { ElMessage } from "element-plus";
+import { usePlayerStore } from "@/store/player";
 // 接口
-import { getMusicComment } from "@/api/listenMusic/listenMusic";
+import { getMusicComment, getSongUrl } from "@/api/listenMusic/listenMusic";
 // 函数
 import { formatComment } from "@/common/formatComment";
 import { formatDuration } from "@/common/formatDuration";
 
-export default {
-  name: "Footer",
-  data() {
-    return {
-      currentIndex: null,
-      isMouseMove: false,
-      isOpenList: false,
-      // 歌曲评论数
-      commentCount: 0,
-      // 格式化后的当前播放时长
-      currentTime: localStorage.getItem("currentTime")
-        ? localStorage.getItem("currentTime")
-        : "00:00",
-      // 当前歌曲总秒数
-      totalSecond: localStorage.getItem("totalSecond")
-        ? localStorage.getItem("totalSecond")
-        : 0,
-      // 格式化后的总时长
-      totalTime: localStorage.getItem("totalTime")
-        ? localStorage.getItem("totalTime")
-        : "00:00",
-      // 进度条
-      songProgress: localStorage.getItem("songProgress")
-        ? localStorage.getItem("songProgress")
-        : 0,
-    };
-  },
-  computed: {
-    ...mapGetters([
-      "isPlaying",
-      "songUrl",
-      "nowSongDetail",
-      "playingList",
-      "currentSecond",
-      "audio",
-    ]),
-    cover() {
-      // 当前歌曲可能为空，需用可选链避免读取 undefined 属性报错
-      return this.nowSongDetail?.al?.picUrl || "";
-    },
-  },
-  filters: {
-    formatComment(count) {
-      return formatComment(count);
-    },
-    formatDuration(dt) {
-      return formatDuration(dt);
-    },
-  },
-  methods: {
-    playClick() {
-      console.log("点击");
-    },
-    // 改变播放状态
-    changeState(state) {
-      this.$store.dispatch("changePlayState", state);
-    },
-    // 播放音乐
-    playMusic() {
-      // 通过 this.playingList 读取 vuex 中的播放列表
-      if (this.playingList.length < 1) {
-        this.$message({
-          message: "播放列表为空",
-          type: "warning",
-          center: true,
-        });
-      } else {
-        // 赋值audio当前播放歌曲的时间（秒）
-        this.$refs.audioplay.currentTime = this.currentSecond;
-        // 用于歌曲url失效后从新获取
-        if (this.songUrl != " ") {
-          this.$refs.audioplay.play();
-        } else {
-          getSongUrl(this.nowSongDetail.id).then((res) => {
-            // 保存歌曲url
-            this.$store.dispatch("saveSongUrl", res.data.data[0].url);
-          });
-        }
-      }
-    },
-    // 暂停音乐
-    pauseMusic() {
-      this.$refs.audioplay.pause();
-    },
-    // 音频数据加载完后的事件
-    onLoadedmetadata(res) {
-      this.totalSecond = res.target.duration; //获取总秒数
-      this.totalTime = formatDuration(this.totalSecond); //格式化为分钟
-      localStorage.setItem("totalTime", this.totalTime); //缓存总时长分钟，用于刷新后显示
-      localStorage.setItem("totalSecond", this.totalSecond);
-    },
-    onTimeupdate(res) {
-      // 提交歌曲播放的实时秒数 用于歌词的实时滚动
-      this.$store.dispatch("saveCurrentSeconds", res.target.currentTime);
-      // 格式化为分钟
-      this.currentTime = formatDuration(res.target.currentTime);
-      // 缓存当前播放时间（分钟）,用于刷新后显示
-      localStorage.setItem("currentTime", this.currentTime);
+const playerStore = usePlayerStore();
+const { isPlaying, songUrl, nowSongDetail, playingList, currentSecond } =
+  storeToRefs(playerStore);
 
-      this.songProgress = Math.ceil(
-        (this.currentSecond / this.totalSecond) * 100
-      );
-      if (this.songProgress != Infinity && !isNaN(this.songProgress)) {
-        // 缓存进度条,用于刷新后恢复
-        localStorage.setItem("songProgress", this.songProgress);
-        this.$refs.progress.style.width = `${this.songProgress}%`;
-      }
-    },
-    // 获取当前音乐的评论数
-    getMusicCommentBy(id) {
-      getMusicComment(id).then((res) => {
-        this.commentCount = res.total;
-      });
-    },
-    // 保存audio标签到vuex
-    saveAudio() {
-      this.$store.commit("saveAudio", this.$refs.audioplay);
-      console.log(this.$store.state.audio);
-    },
-    // 清空列表
-    clearList() {
-      this.$store.dispatch("clearSongList");
-    },
-  },
-  // 页面渲染好了之后挂载
-  mounted() {
-    this.saveAudio();
-  },
-  // 页面渲染前
-  created() {
-    // 没有当前歌曲时不请求评论，避免无效请求
-    if (this.nowSongDetail && this.nowSongDetail.id) {
-      this.getMusicCommentBy(this.nowSongDetail.id);
-    }
-  },
+const audioplay = ref(null);
+const progress = ref(null);
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+const isOpenList = ref(false);
+// 歌曲评论数
+const commentCount = ref(0);
+// 格式化后的当前播放时长
+const currentTime = ref(localStorage.getItem("currentTime") || "00:00");
+// 当前歌曲总秒数
+const totalSecond = ref(localStorage.getItem("totalSecond") || 0);
+// 格式化后的总时长
+const totalTime = ref(localStorage.getItem("totalTime") || "00:00");
+// 进度条
+const songProgress = ref(localStorage.getItem("songProgress") || 0);
+
+// 当前歌曲封面，空值用可选链兜底
+const cover = computed(() => nowSongDetail.value?.al?.picUrl || "");
+
+// 改变播放状态
+const changeState = (state) => playerStore.changePlayState(state);
+// 播放音乐
+const playMusic = () => {
+  if (playingList.value.length < 1) {
+    ElMessage({ message: "播放列表为空", type: "warning", center: true });
+    return;
+  }
+  audioplay.value.currentTime = currentSecond.value;
+  if (songUrl.value != " ") {
+    audioplay.value.play();
+  } else {
+    getSongUrl(nowSongDetail.value.id).then((res) =>
+      playerStore.saveSongUrl(res.data[0].url)
+    );
+  }
 };
+// 暂停音乐
+const pauseMusic = () => audioplay.value.pause();
+// 音频数据加载完后的事件
+const onLoadedmetadata = (res) => {
+  totalSecond.value = res.target.duration;
+  totalTime.value = formatDuration(totalSecond.value);
+  localStorage.setItem("totalTime", totalTime.value);
+  localStorage.setItem("totalSecond", totalSecond.value);
+};
+// 播放时间更新
+const onTimeupdate = (res) => {
+  playerStore.saveCurrentSeconds(res.target.currentTime);
+  currentTime.value = formatDuration(res.target.currentTime);
+  localStorage.setItem("currentTime", currentTime.value);
+  songProgress.value = Math.ceil(
+    (currentSecond.value / totalSecond.value) * 100
+  );
+  if (songProgress.value != Infinity && !isNaN(songProgress.value)) {
+    localStorage.setItem("songProgress", songProgress.value);
+    progress.value.style.width = `${songProgress.value}%`;
+  }
+};
+// 获取当前音乐的评论数
+const getMusicCommentBy = (id) => {
+  getMusicComment(id).then((res) => {
+    commentCount.value = res.total;
+  });
+};
+// 保存 audio 标签到 store
+const saveAudio = () => playerStore.saveAudio(audioplay.value);
+// 清空列表
+const clearList = () => playerStore.clearSongList();
+
+onMounted(() => {
+  saveAudio();
+  // 没有当前歌曲时不请求评论
+  if (nowSongDetail.value?.id) getMusicCommentBy(nowSongDetail.value.id);
+});
 </script>
 
 <style lang="less" scoped>

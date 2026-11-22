@@ -2,25 +2,21 @@
   <div id="header">
     <div class="header-left">
       <span class="back" @click="goBack">
-        <i class="el-icon-arrow-left"></i>
+        <i class="bi bi-arrow-left"></i>
       </span>
       <span class="back" @click="goIn">
-        <i class="el-icon-arrow-right"></i>
+        <i class="bi bi-arrow-right"></i>
       </span>
       <input v-model="keyWord" type="text" placeholder="输入文本" />
       <span class="search" @click="goPush(keyWord)">
-        <i class="el-icon-search"></i>
+        <i class="bi bi-search"></i>
       </span>
     </div>
     <div class="header-right">
       <span v-if="userInfo" @click="showLoginOut" class="work">退出登录</span>
       <img
         @click="showLogin"
-        v-bind:src="
-          userInfo
-            ? userInfo.avatarUrl
-            : require('@/assets/images/singerload.png')
-        "
+        :src="userInfo ? userInfo.avatarUrl : singerload"
         alt=""
       />
       <p @click="showLogin">
@@ -45,93 +41,61 @@
   </div>
 </template>
 
-<script>
-import { loginOut, loginStatus } from "@/api/login/login";
+<script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/user";
 // 引入登录弹窗组件
 import LoginModal from "@/components/LoginModal.vue";
 import LoginOutPop from "@/components/LoginOutPop.vue";
-// vuex
-import { mapGetters } from "vuex";
-import { userInfo } from "@/store/getters";
-export default {
-  name: "Header",
-  components: {
-    LoginModal,
-    LoginOutPop,
-  },
-  data() {
-    return {
-      // 搜索词
-      keyWord: "",
-      showLoginModal: false,
-      showOut: false,
-    };
-  },
-  computed: {
-    ...mapGetters(["isPlaying", "userInfo", "isLogin"]),
-  },
-  methods: {
-    // 切换主题
-    changeTheme() {
-      console.log("切换主题");
-      let theme = this.$store.state.theme === "light" ? "dark" : "light";
-      document.documentElement.setAttribute("data-theme", theme);
-      this.$store.dispatch("changeTheme", theme);
-      if (theme === "light") {
-        this.$store.dispatch("changeLogo", "@/assets/images/logo-light.png");
-        console.log("改变logo");
-      } else {
-        this.$store.dispatch("changeLogo", "@/assets/images/logo-dark.png");
-      }
-    },
-    // 返回
-    goBack() {
-      this.$router.go(-1);
-    },
-    // 前进
-    goIn() {
-      this.$router.go(1);
-    },
-    // 搜索
-    goPush(keyWord) {
-      if (keyWord === "") {
-        return;
-      }
+// 头像占位图
+import singerload from "@/assets/images/singerload.png";
 
-      // params
-      // this.$router.push({
-      //   name: "Search",
-      //   params: { keyword: keyWord },
-      // });
-      // query
-      this.$router.push({
-        path: "/search",
-        query: { keyword: keyWord },
-      });
-    },
-    
-    // 控制登录弹窗出现
-    showLogin() {
-      // 如果已经登录
-      if (this.isLogin) {
-        return;
-      }
-      // 没有的话
-      this.showLoginModal = true;
-    },
-    // 控制登录弹窗关闭
-    closeLogin(){
-      this.showLoginModal = false;
-    },
-    // 控制退出弹窗出现
-    showLoginOut() {
-      this.showOut = true;
-    },
-    // 退出弹窗关闭
-    closeLoginOut() {
-      this.showOut = false;
-    },
-  },
+const router = useRouter();
+const userStore = useUserStore();
+const { userInfo, isLogin } = storeToRefs(userStore);
+
+// 搜索词与弹窗显隐
+const keyWord = ref("");
+const showLoginModal = ref(false);
+const showOut = ref(false);
+
+// 切换主题
+const changeTheme = () => {
+  const theme = userStore.theme === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", theme);
+  userStore.changeTheme(theme);
+  userStore.changeLogo(
+    theme === "light"
+      ? "@/assets/images/logo-light.png"
+      : "@/assets/images/logo-dark.png"
+  );
+};
+// 返回 / 前进
+const goBack = () => router.go(-1);
+const goIn = () => router.go(1);
+// 搜索
+const goPush = (keyword) => {
+  if (keyword === "") return;
+  router.push({ path: "/search", query: { keyword } });
+};
+// 打开登录弹窗（已登录则不弹）
+const showLogin = () => {
+  if (isLogin.value) return;
+  showLoginModal.value = true;
+};
+// 关闭登录弹窗
+const closeLogin = () => {
+  showLoginModal.value = false;
+};
+// 打开退出弹窗
+const showLoginOut = () => {
+  showOut.value = true;
+};
+// 关闭退出弹窗
+const closeLoginOut = () => {
+  showOut.value = false;
 };
 </script>
 

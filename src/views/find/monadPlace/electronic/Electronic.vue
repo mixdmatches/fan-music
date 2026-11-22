@@ -11,33 +11,22 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
 // 网络请求
 import { getMonad } from "@/api/findMusic/monadPlace/monadPlace";
 import SongMonadItem from "@/components/SongMonadItem.vue";
-export default {
-  name: "Ballad",
-  components: {
-    SongMonadItem,
-  },
-  data() {
-    return {
-      // 歌单列表
-      MonadList: [],
-    };
-  },
-  methods: {
-    async getMonadBy(cat, limit) {
-      await getMonad(cat, limit).then((res) => {
-        this.MonadList = res.playlists;
-        console.log(res.playlists);
-      });
-    },
-  },
-  created() {
-    this.getMonadBy("电子", 48);
-  },
+
+// 歌单列表
+const MonadList = ref([]);
+
+// 按分类获取歌单
+const getMonadBy = async (cat, limit) => {
+  const res = await getMonad(cat, limit);
+  MonadList.value = res.playlists;
 };
+
+onMounted(() => getMonadBy("电子", 48));
 </script>
 
 <style lang="less" scoped>

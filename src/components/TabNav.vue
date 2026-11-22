@@ -12,28 +12,23 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "TabNav",
-  data() {
-    return {
-      currentIndex: 0,
-    };
+<script setup>
+import { ref } from "vue";
+
+defineProps({
+  tagList: {
+    type: Array,
+    default: () => [],
   },
-  props: {
-    tagList: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
-  },
-  methods: {
-    tabItemClick(index, item) {
-      this.currentIndex = index;
-      this.$emit("tabItemClick", item);
-    },
-  },
+});
+const emit = defineEmits(["tabItemClick"]);
+
+const currentIndex = ref(0);
+
+// 点击标签，向外抛出选中项
+const tabItemClick = (index, item) => {
+  currentIndex.value = index;
+  emit("tabItemClick", item);
 };
 </script>
 

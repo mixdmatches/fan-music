@@ -4,37 +4,33 @@
     <div class="commend">
       <!-- 头部 -->
       <div class="header">
-        <router-link
-          active-class="text"
-          :to="item.path"
-          tag="span"
+        <span
           v-for="(item, index) in headerNavBar"
           :key="index"
-          :class="{ text: $route.path === item.path }"
+          :class="{ text: route.path === item.path }"
+          @click="router.push(item.path)"
         >
           {{ item.name }}
-        </router-link>
+        </span>
       </div>
       <router-view></router-view>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: "Find",
-  data() {
-    return {
-      headerNavBar: [
-        { name: "精选", path: "/find/coiffed" },
-        { name: "歌单广场", path: "/find/monadplace" },
-        { name: "排行榜", path: "/find/leaderboard" },
-        { name: "歌手", path: "/find/singer" },
-        // { name: "VIP", path: "/find/vip" },
-      ],
-    };
-  },
-};
+<script setup>
+import { useRouter, useRoute } from "vue-router";
+
+const router = useRouter();
+const route = useRoute();
+
+// 顶部导航配置
+const headerNavBar = [
+  { name: "精选", path: "/find/coiffed" },
+  { name: "歌单广场", path: "/find/monadplace" },
+  { name: "排行榜", path: "/find/leaderboard" },
+  { name: "歌手", path: "/find/singer" },
+];
 </script>
 
 <style lang="less" scoped>

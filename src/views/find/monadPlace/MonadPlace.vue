@@ -1,39 +1,34 @@
 <template>
   <div id="monad">
     <div class="tabNav">
-      <router-link
-        active-class="text"
-        tag="span"
-        :to="item.path"
+      <span
         class="tab"
         v-for="(item, index) in tabNav"
         :key="index"
-        :class="{ text: $route.path === item.path }"
-        >{{ item.name }}</router-link
+        :class="{ text: route.path === item.path }"
+        @click="router.push(item.path)"
+        >{{ item.name }}</span
       >
     </div>
     <router-view></router-view>
   </div>
 </template>
 
-<script>
-export default {
-  name: "MonadChoice",
-  data() {
-    return {
-      clickTabPath: "",
-      clickTabName: "",
-      tabNav: [
-        { name: "推荐", path: "/find/monadplace/commend" },
-        { name: "华语", path: "/find/monadplace/chinese" },
-        { name: "摇滚", path: "/find/monadplace/rock" },
-        { name: "民谣", path: "/find/monadplace/ballad" },
-        { name: "电子", path: "/find/monadplace/electronic" },
-        { name: "轻音乐", path: "/find/monadplace/lightmusic" },
-      ],
-    };
-  },
-};
+<script setup>
+import { useRouter, useRoute } from "vue-router";
+
+const router = useRouter();
+const route = useRoute();
+
+// 歌单广场分类导航
+const tabNav = [
+  { name: "推荐", path: "/find/monadplace/commend" },
+  { name: "华语", path: "/find/monadplace/chinese" },
+  { name: "摇滚", path: "/find/monadplace/rock" },
+  { name: "民谣", path: "/find/monadplace/ballad" },
+  { name: "电子", path: "/find/monadplace/electronic" },
+  { name: "轻音乐", path: "/find/monadplace/lightMusic" },
+];
 </script>
 
 <style lang="less" scoped>

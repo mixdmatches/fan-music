@@ -8,8 +8,8 @@
         <div class="info">
           <p class="title">{{ loveDetail.name }}</p>
           <div class="creator">
-            <img v-lazy="loveDetail.creator.avatarUrl" alt="" />
-            <p class="creatorname">{{ loveDetail.creator.nickname }}</p>
+            <img v-lazy="loveDetail.creator?.avatarUrl" alt="" />
+            <p class="creatorname">{{ loveDetail.creator?.nickname }}</p>
             <p class="creatortime">发布</p>
           </div>
         </div>
@@ -97,7 +97,7 @@
             </span>
             <!-- 时长 -->
             <span class="totalTime">{{
-              item.dt | formatDuration(item.dt)
+              formatDuration(item.dt)
             }}</span>
           </div>
         </div>
@@ -110,7 +110,7 @@
         <div class="hotComment" v-if="hotComments.length !== 0">
           <div class="title">
             精彩评论
-            <i>{{}}</i>
+            <i></i>
           </div>
           <div class="commentItem" v-for="item in hotComments" :key="item.id">
             <img v-lazy="item.user.avatarUrl" alt="" />
@@ -129,7 +129,7 @@
         <div class="newComment">
           <div class="title">
             最新评论
-            <i>{{}}</i>
+            <i></i>
           </div>
           <div class="commentItem" v-for="item in loveComments" :key="item.id">
             <img v-lazy="item.user.avatarUrl" alt="" />
@@ -157,92 +157,75 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from "vue";
+import { storeToRefs } from "pinia";
+import { ElMessage } from "element-plus";
+import { useUserStore } from "@/store/user";
+import { usePlayerStore } from "@/store/player";
 // api
-import { getUserLikeSong, getUserMonad } from "@/api/user/user";
+import { getUserMonad } from "@/api/user/user";
 import {
   getMonadMusics,
   getMonadComment,
 } from "@/api/findMusic/monadPlace/monadPlace";
+import { getSongUrl } from "@/api/listenMusic/listenMusic";
 // 引入函数
-import { formatNum } from "@/common/listenCount";
 import { formatDuration } from "@/common/formatDuration";
 // 引入组件
 import BlackTabNav from "@/components/BlackTabNav.vue";
-import LoginModal from "@/components/LoginModal.vue";
-// vuex
-import { mapGetters } from "vuex";
-export default {
-  name: "Love",
-  data() {
-    return {
-      // 未登录时 userInfo 为 null，需用可选链避免空指针
-      uid: this.$store.state.userInfo?.userId,
-      // loading:true,
-      tabs: [
-        { name: "歌曲", type: 1 },
-        { name: "评论", type: 2 },
-        // { name: "收藏者", type: 3 },
-      ],
-      type: 1,
-      loveMonadId: "",
-      loveDetail: {},
-      loveMusics: [],
-      loveComments: [],
-      hotComments: [],
-      currentIndex: null,
-      isMouseMove: false,
-    };
-  },
-  // 过滤器
-  filters: {
-    formatDuration(time) {
-      return formatDuration(time);
-    },
-  },
-  components: {
-    BlackTabNav,
-    LoginModal,
-  },
-  computed: {
-    ...mapGetters(["isLogin"]),
-  },
-  methods: {
-    tabClick(item) {
-      this.type = item.type;
-    },
-    // 用户喜欢的音乐歌单详情，歌曲，评论
-    async getUserLikeSongBy() {
-      if (!this.isLogin) {
-        this.$message("未登录");
-        return;
-      }
-      await getUserMonad(this.uid).then((res) => {
-        console.log(res.playlist[0]);
-        this.loveMonadId = res.playlist[0].id;
-        console.log(this.loveMonadId);
-        this.loveDetail = res.playlist[0];
-      });
-      // 歌曲
-      await getMonadMusics(this.loveMonadId).then((res) => {
-        console.log(res);
-        this.loveMusics = res.songs;
-      });
-      // 评论
-      await getMonadComment(this.loveMonadId).then((res) => {
-        console.log(res);
-        this.loveComments = res.comments;
-        this.hotComments = res.hotComments;
-        console.log(this.hotComments);
-        console.log(this.loveComments);
-      });
-    },
-  },
-  created() {
-    // 已登录才加载喜欢的音乐，未登录时模板不渲染内容
-    this.getUserLikeSongBy();
-  },
+
+const userStore = useUserStore();
+const playerStore = usePlayerStore();
+const { isLogin } = storeToRefs(userStore);
+
+// 未登录时 userInfo 为 null，用可选链兜底
+const uid = userStore.userInfo?.userId;
+
+const tabs = [
+  { name: "歌曲", type: 1 },
+  { name: "评论", type: 2 },
+];
+const type = ref(1);
+const loveMonadId = ref("");
+const loveDetail = ref({});
+const loveMusics = ref([]);
+const loveComments = ref([]);
+const hotComments = ref([]);
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+
+// 切换歌曲 / 评论
+const tabClick = (item) => {
+  type.value = item.type;
 };
+// 获取喜欢的音乐歌单、歌曲、评论
+const getUserLikeSongBy = async () => {
+  if (!isLogin.value) {
+    ElMessage("未登录");
+    return;
+  }
+  const res = await getUserMonad(uid);
+  loveMonadId.value = res.playlist[0].id;
+  loveDetail.value = res.playlist[0];
+  const musicsRes = await getMonadMusics(loveMonadId.value);
+  loveMusics.value = musicsRes.songs;
+  const commentRes = await getMonadComment(loveMonadId.value);
+  loveComments.value = commentRes.comments;
+  hotComments.value = commentRes.hotComments;
+};
+// 播放全部
+const playAll = async () => {
+  if (loveMusics.value.length === 0) return;
+  const res = await getSongUrl(loveMusics.value[0].id);
+  playerStore.saveSongUrl(res.data[0].url);
+  playerStore.changePlayState(true);
+  playerStore.saveSongDetail(loveMusics.value[0]);
+  playerStore.addAllSong(loveMusics.value);
+};
+
+// 已登录才加载喜欢的音乐
+getUserLikeSongBy();
 </script>
 
 <style lang="less" scoped>

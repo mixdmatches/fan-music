@@ -13,16 +13,9 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import AuthorityPlay from "./authorityPlayList/AuthorityPlay.vue";
 import NewMusicList from "./newMusic/NewMusicList.vue";
-export default {
-  name: "Coiffed",
-  components: {
-    AuthorityPlay,
-    NewMusicList,
-  },
-};
 </script>
 
 <style lang="less" scoped>

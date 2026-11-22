@@ -3,42 +3,33 @@
     <img src="" alt="" />
     <!-- <h2>音乐平台</h2> -->
     <div class="aside-container1" router>
-      <router-link
-        tag="span"
-        :to="item.path"
+      <span
         class="aside-tab"
         v-for="(item, index) in subnavitem"
         :key="index"
-        active-class="active"
-        :class="{ active: $route.path === item.path }"
+        :class="{ active: route.path === item.path }"
+        @click="router.push(item.path)"
       >
         <i :class="item.icon"></i>
         <p>{{ item.name }}</p>
-      </router-link>
+      </span>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: "Aside",
-  data() {
-    return {
-      subnavitem: [
-        { name: "发现", path: "/find", icon: "el-icon-s-home" },
-        { name: "播客", path: "/podcast", icon: "el-icon-magic-stick" },
-        { name: "社区", path: "/community", icon: "el-icon-chat-round" },
-        { name: "我喜欢的音乐", path: "/love", icon: "bi bi-heart" },
-      ],
-      activeTab: "发现",
-    };
-  },
-  methods: {
-    click(item) {
-      console.log("点击了");
-    },
-  },
-};
+<script setup>
+import { useRouter, useRoute } from "vue-router";
+
+const router = useRouter();
+const route = useRoute();
+
+// 侧边导航配置
+const subnavitem = [
+  { name: "发现", path: "/find", icon: "bi bi-house" },
+  { name: "播客", path: "/podcast", icon: "bi bi-magic" },
+  { name: "社区", path: "/community", icon: "bi bi-chat-dots" },
+  { name: "我喜欢的音乐", path: "/love", icon: "bi bi-heart" },
+];
 </script>
 
 <style lang="less" scoped>

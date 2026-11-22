@@ -11,28 +11,23 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "TabNavNav",
-  props: {
-    tagList: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
+<script setup>
+import { ref } from "vue";
+
+defineProps({
+  tagList: {
+    type: Array,
+    default: () => [],
   },
-  data() {
-    return {
-      currentIndex: 0,
-    };
-  },
-  methods: {
-    tagClick(index, item) {
-      this.currentIndex = index;
-      this.$emit("tagClick", item);
-    },
-  },
+});
+const emit = defineEmits(["tagClick"]);
+
+const currentIndex = ref(0);
+
+// 点击首字母标签，向外抛出选中项
+const tagClick = (index, item) => {
+  currentIndex.value = index;
+  emit("tagClick", item);
 };
 </script>
 

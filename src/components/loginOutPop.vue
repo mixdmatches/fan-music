@@ -18,38 +18,24 @@
   </div>
 </template>
 
-<script>
-import { loginOut } from "@/api/login/login";
-export default {
-  name: "LoginOutPop",
-  data() {
-    return {
-      // show: false,
-    };
-  },
-  // props: {
-  //   show: {
-  //     type: Boolean,
-  //   },
-  // },
-  methods: {
-    // 关闭弹窗
-    close() {
-      this.$emit("closeLoginOut");
-    },
-    // 退出登录
-    async loginOut() {
-      console.log("退出登录");
-      localStorage.removeItem("cookie");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("isLogin");
-      await loginOut().then((res) => {
-        console.log(res);
-      });
-      location.reload();
-      this.$message("已退出");
-    },
-  },
+<script setup>
+import { ElMessage } from "element-plus";
+import { loginOut as loginOutApi } from "@/api/login/login";
+
+const emit = defineEmits(["closeLoginOut"]);
+
+// 关闭弹窗
+const close = () => emit("closeLoginOut");
+// 退出登录
+const loginOut = async () => {
+  localStorage.removeItem("cookie");
+  localStorage.removeItem("userInfo");
+  localStorage.removeItem("isLogin");
+  await loginOutApi().then((res) => {
+    console.log(res);
+  });
+  location.reload();
+  ElMessage("已退出");
 };
 </script>
 

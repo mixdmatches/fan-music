@@ -11,34 +11,22 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
 // 网络请求
-// import {getSongMonad} from "@/api/findMusic/coiffedChoice/"
-import { getMonad, getHotMonad } from "@/api/findMusic/monadPlace/monadPlace";
+import { getHotMonad } from "@/api/findMusic/monadPlace/monadPlace";
 import SongMonadItem from "@/components/SongMonadItem.vue";
-export default {
-  name: "Commend",
-  components: {
-    SongMonadItem,
-  },
-  data() {
-    return {
-      // 歌单列表
-      MonadList: [],
-    };
-  },
-  methods: {
-    async getHotMonadBy(limit) {
-      await getHotMonad(limit).then((res) => {
-        this.MonadList = res.playlists;
-        console.log(res.playlists);
-      });
-    },
-  },
-  created() {
-    this.getHotMonadBy(48);
-  },
+
+// 歌单列表
+const MonadList = ref([]);
+
+// 获取推荐歌单
+const getHotMonadBy = async (limit) => {
+  const res = await getHotMonad(limit);
+  MonadList.value = res.playlists;
 };
+
+onMounted(() => getHotMonadBy(48));
 </script>
 
 <style lang="less" scoped>

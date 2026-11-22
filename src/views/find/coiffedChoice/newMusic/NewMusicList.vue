@@ -2,7 +2,7 @@
   <!-- 最新音乐 -->
   <div class="newMusic">
     <!-- 标题 -->
-    <p>最新音乐<i class="el-icon-arrow-right"></i></p>
+    <p>最新音乐<i class="bi bi-chevron-right"></i></p>
     <!-- 一些歌 -->
     <div class="newMusic-items">
       <NewMusicItem
@@ -15,57 +15,35 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
+import { usePlayerStore } from "@/store/player";
 // 网络请求
 import { getNewSong } from "@/api/findMusic/coiffedChoice/coiffedchoice";
 import { getSongUrl, getSongDetail } from "@/api/listenMusic/listenMusic";
 // 引入组件
 import NewMusicItem from "./newMusicItem/NewMusicItem.vue";
-// vuex
-import { mapGetters } from "@/store/getters";
-export default {
-  name: "NewMusicList",
-  components: {
-    NewMusicItem,
-  },
-  data() {
-    return {
-      // 新音乐列表
-      newSongList: [],
-      // 被点击播放的音乐url
-      songUrl: "",
-    };
-  },
-  methods: {
-    // 获取新音乐列表
-    async getNewSongBy(limit) {
-      await getNewSong(limit).then((res) => {
-        this.newSongList = res.result;
-      });
-    },
 
-    // 点击播放音乐按钮
-    async playClick(item) {
-      console.log("点击最新音乐" + item.id);
-      // 1.获取url
-      await getSongUrl(item.id).then((res) => {
-        // 保存歌曲url丢进仓库中
-        const { url } = res.data[0];
-        this.$store.commit("saveSongUrl", url);
-      });
-      // 2.获取歌曲详情
-      await getSongDetail(item.id).then((res) => {
-        // 保存播放的歌曲详情
-        this.$store.commit("saveSongDetail", res.songs[0]);
-        // 把该歌曲存进playingList
-        this.$store.commit("addPlayinglist", this.$store.state.nowSongDetail);
-      });
-    },
-  },
-  created() {
-    this.getNewSongBy(9);
-  },
+const playerStore = usePlayerStore();
+
+// 新音乐列表
+const newSongList = ref([]);
+
+// 获取最新音乐列表
+const getNewSongBy = async (limit) => {
+  const res = await getNewSong(limit);
+  newSongList.value = res.result;
 };
+// 点击播放音乐
+const playClick = async (item) => {
+  const urlRes = await getSongUrl(item.id);
+  playerStore.saveSongUrl(urlRes.data[0].url);
+  const detailRes = await getSongDetail(item.id);
+  playerStore.saveSongDetail(detailRes.songs[0]);
+  playerStore.addPlayinglist(playerStore.nowSongDetail);
+};
+
+onMounted(() => getNewSongBy(9));
 </script>
 
 <style lang="less" scoped>

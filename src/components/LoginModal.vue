@@ -53,7 +53,7 @@
         </div>
         <div class="modal-content">
           <h2>扫码登录</h2>
-          <img :src="this.qrimg" @click="QRlogin" alt="" />
+          <img :src="qrimg" @click="QRlogin" alt="" />
           <p>使用app扫码登陆</p>
         </div>
       </div>
@@ -61,7 +61,10 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onUnmounted } from "vue";
+import { ElMessage } from "element-plus";
+import { useUserStore } from "@/store/user";
 // api
 import {
   getCode,
@@ -70,186 +73,142 @@ import {
   getqrimg,
   getStatusCode,
   getUserInfo,
-  phoneLogin,
   loginStatus,
 } from "@/api/login/login";
 import { getUserDetail } from "@/api/user/user";
-export default {
-  name: "LoginModal",
-  data() {
-    return {
-      type: 0, //0:密码登录 1：验证码 2.二维码
-      phoneNumber: "", //手机号
-      captcha: "", //验证码
-      password: "", //密码
-      totalSencond: 60, // 总秒数
-      second: 60, // 当前秒数,开定时器对second
-      timer: null,
-      QRway: false, //二维码登录？
-      qrimg: "",
-      timerStatus: null,
-    };
-  },
-  methods: {
-    // 关闭窗口
-    close() {
-      clearInterval(this.timerStatus);
-      this.$emit("closeLogin");
-    },
-    // 验证手机号格式
-    vailFn() {
-      if (!/^1[3-9]\d{9}$/.test(this.phoneNumber)) {
-        this.$message.error("手机号格式错误");
-        return false;
-      }
-      return true;
-    },
-    // 获取验证码
-    async getCodeBy() {
-      // 验证表单
-      if (!this.vailFn()) {
-        return;
-      }
-      // 开启定时器
-      if (!this.timer && this.second === this.totalSencond) {
-        this.$message({
-          message: "发送成功，请注意接收",
-          type: "success",
-        });
-        // 调用api
-        var ress;
-        await getCode(this.phoneNumber).then((res) => {
-          ress = res;
-          if (ress.message) {
-            this.$message({
-              showClose: true,
-              message: ress.message,
-            });
-          }
-        });
-        if (ress.data) {
-          this.timer = setInterval(() => {
-            console.log("正在倒计时");
-            this.second--;
-            if (this.second <= 0) {
-              clearInterval(this.timer);
-              this.timer = null; // 重置
-              this.second = this.totalSencond; // 归位
-            }
-          }, 1000);
-        }
-      }
-    },
-    // 校验验证码
-    vailCode() {
-      var result;
-      if (this.captcha === "") {
-        this.$message.error("未输入验证码");
-        return false;
-      } else {
-        // 验证验证码是否正确
-        validate(this.phoneNumber, this.captcha).then((res) => {
-          console.log(res);
-          result = res.data;
-          console.log(result);
-        });
-      }
-      if (result) {
-        this.$message.error("验证码错误");
-        return false;
-      }
-      return true;
-    },
-    // 获取账号信息
-    getUserAccount() {
-      var uid;
-      getUserInfo().then((res) => {
-        console.log(res);
-        console.log(res.account);
-        uid = res.account.id;
-      });
-      getUserDetail(uid).then((res) => {
-        this.$store.commit("saveUserInfo", res.profile);
-      });
-    },
-    // 登录
-    login() {
-      var cookie = localStorage.getItem("cookie");
-      this.getLoginStatus(cookie);
-      // 校验手机号
-      if (!this.vailFn()) {
-        return;
-      }
-      if (!this.vailCode()) {
-        return;
-      }
-      // 成功后获取用户信息
-      this.getUserAccount();
-      this.$store.commit("updateLogin", true);
-      this.$message({
-        message: "登陆成功",
-        type: "success",
-      });
-      this.phoneNumber = "";
-      this.captcha = "";
-      clearInterval(this.timerStatus);
-      // this.getLoginStatus(cookiee);
-      // localStorage.setItem("cookie", cookiee);
-      this.close();
-    },
-    // 二维码
-    async QRlogin() {
-      // clearInterval(this.timerStatus);
-      var cookie = localStorage.getItem("cookie");
-      this.getLoginStatus(cookie);
-      this.QRway = true;
-      var key;
-      // 获取key
-      await getKey().then((res) => {
-        key = res.data.unikey;
-      });
-      await getqrimg(key).then((res) => {
-        this.qrimg = res.data.qrimg;
-      });
 
-      var status;
-      var cookiee;
-      this.timerStatus = setInterval(async () => {
-        console.log('倒计时')
-        await getStatusCode(key).then((res) => {
-          status = res.code;
-          cookiee = res.cookie;
-        });
-        if (status === 800) {
-          this.$message("二维码已过期,点击二维码重新获取");
-          clearInterval(this.timerStatus);
-        }
-        if (status === 803) {
-          // 这一步会返回cookie
-          clearInterval(this.timerStatus);
-          this.getLoginStatus(cookiee);
-          localStorage.setItem("cookie", cookiee);
-          this.close();
-          this.$store.commit("updateLogin", true);
-          this.$message({
-            message: "授权登录成功",
-            type: "success",
-          });
-        }
-      }, 3000);
-    },
-    // 登陆状态
-    async getLoginStatus(cookie = "") {
-      await loginStatus(cookie).then((res) => {
-        console.log("res.data:", res.data);
-        this.$store.commit("saveUserInfo", res.data.profile);
-      });
-    },
-  },
-  destroyed() {
-    clearInterval(this.timer);
-  },
+const emit = defineEmits(["closeLogin"]);
+const userStore = useUserStore();
+
+const phoneNumber = ref(""); // 手机号
+const captcha = ref(""); // 验证码
+const totalSencond = ref(60); // 总秒数
+const second = ref(60); // 当前秒数
+const timer = ref(null);
+const QRway = ref(false); // 二维码登录？
+const qrimg = ref("");
+const timerStatus = ref(null);
+
+// 关闭窗口
+const close = () => {
+  clearInterval(timerStatus.value);
+  emit("closeLogin");
 };
+// 验证手机号格式
+const vailFn = () => {
+  if (!/^1[3-9]\d{9}$/.test(phoneNumber.value)) {
+    ElMessage.error("手机号格式错误");
+    return false;
+  }
+  return true;
+};
+// 获取验证码
+const getCodeBy = async () => {
+  if (!vailFn()) return;
+  if (!timer.value && second.value === totalSencond.value) {
+    ElMessage({ message: "发送成功，请注意接收", type: "success" });
+    let ress;
+    await getCode(phoneNumber.value).then((res) => {
+      ress = res;
+      if (ress.message) {
+        ElMessage({ showClose: true, message: ress.message });
+      }
+    });
+    if (ress.data) {
+      timer.value = setInterval(() => {
+        second.value--;
+        if (second.value <= 0) {
+          clearInterval(timer.value);
+          timer.value = null;
+          second.value = totalSencond.value;
+        }
+      }, 1000);
+    }
+  }
+};
+// 校验验证码
+const vailCode = () => {
+  let result;
+  if (captcha.value === "") {
+    ElMessage.error("未输入验证码");
+    return false;
+  }
+  validate(phoneNumber.value, captcha.value).then((res) => {
+    result = res.data;
+  });
+  if (result) {
+    ElMessage.error("验证码错误");
+    return false;
+  }
+  return true;
+};
+// 获取账号信息
+const getUserAccount = () => {
+  let uid;
+  getUserInfo().then((res) => {
+    uid = res.account.id;
+  });
+  getUserDetail(uid).then((res) => {
+    userStore.saveUserInfo(res.profile);
+  });
+};
+// 登录
+const login = () => {
+  const cookie = localStorage.getItem("cookie");
+  getLoginStatus(cookie);
+  if (!vailFn()) return;
+  if (!vailCode()) return;
+  getUserAccount();
+  userStore.updateLogin(true);
+  ElMessage({ message: "登陆成功", type: "success" });
+  phoneNumber.value = "";
+  captcha.value = "";
+  clearInterval(timerStatus.value);
+  close();
+};
+// 二维码登录
+const QRlogin = async () => {
+  const cookie = localStorage.getItem("cookie");
+  getLoginStatus(cookie);
+  QRway.value = true;
+  let key;
+  await getKey().then((res) => {
+    key = res.data.unikey;
+  });
+  await getqrimg(key).then((res) => {
+    qrimg.value = res.data.qrimg;
+  });
+
+  let status;
+  let cookiee;
+  timerStatus.value = setInterval(async () => {
+    await getStatusCode(key).then((res) => {
+      status = res.code;
+      cookiee = res.cookie;
+    });
+    if (status === 800) {
+      ElMessage("二维码已过期,点击二维码重新获取");
+      clearInterval(timerStatus.value);
+    }
+    if (status === 803) {
+      // 这一步会返回cookie
+      clearInterval(timerStatus.value);
+      getLoginStatus(cookiee);
+      localStorage.setItem("cookie", cookiee);
+      close();
+      userStore.updateLogin(true);
+      ElMessage({ message: "授权登录成功", type: "success" });
+    }
+  }, 3000);
+};
+// 登陆状态
+const getLoginStatus = async (cookie = "") => {
+  await loginStatus(cookie).then((res) => {
+    userStore.saveUserInfo(res.data.profile);
+  });
+};
+
+onUnmounted(() => clearInterval(timer.value));
 </script>
 
 <style lang="less" scoped>

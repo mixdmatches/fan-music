@@ -72,7 +72,7 @@
             </span>
           </span>
           <!-- 时长 -->
-          <span class="totalTime">{{ item.dt | formatDuration(item.dt) }}</span>
+          <span class="totalTime">{{ formatDuration(item.dt) }}</span>
         </div>
       </div>
     </div>
@@ -130,7 +130,7 @@
           <span class="album">{{ item.artist.name }}</span>
           <!-- 时间 -->
           <span class="totalTime">{{
-            item.publishTime | formatDate(item.publishTime)
+            formatDate(item.publishTime)
           }}</span>
         </div>
       </div>
@@ -222,7 +222,7 @@
           <span class="totalTime">{{ item.creator.nickname }}</span>
           <!-- 播放量-->
           <span class="like">{{
-            item.playCount | formatNum(item.playCount)
+            formatNum(item.playCount)
           }}</span>
         </div>
       </div>
@@ -230,88 +230,54 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { usePlayerStore } from "@/store/player";
 // 格式化
 import { formatNum } from "@/common/listenCount";
 import { formatDuration } from "@/common/formatDuration";
 import { formatDate } from "@/common/formatDate";
 // 接口
 import { getSongUrl, getSongDetail } from "@/api/listenMusic/listenMusic";
-export default {
-  name: "SearchResult",
-  props: {
-    // 搜索结果
-    result: {
-      type: Object,
-    },
-    // 搜索类型
-    type: {
-      type: Number,
-    },
-    // 搜索词
-    keyword: {
-      type: String,
-    },
+
+defineProps({
+  // 搜索结果
+  result: {
+    type: Object,
   },
-  data() {
-    return {
-      // 格式化时长
-      date: [],
-      // 格式化播放量
-      playCount: [],
-      // 鼠标是否移到元素上
-      isMouseMove: false,
-      // 当前鼠标移动到的行
-      currentIndex: null,
-    };
+  // 搜索类型
+  type: {
+    type: Number,
   },
-  // 过滤器
-  filters: {
-    formatNum(count) {
-      return formatNum(count);
-    },
-    formatDuration(time) {
-      return formatDuration(time);
-    },
-    formatDate(date) {
-      return formatDate(date);
-    },
+  // 搜索词
+  keyword: {
+    type: String,
   },
-  methods: {
-    // 点击播放
-    playClick(id) {
-      console.log("点击" + id);
-      // 1.获取url
-      getSongUrl(id).then((res) => {
-        // 保存歌曲url丢进仓库中
-        const { url } = res.data[0];
-        this.$store.commit("saveSongUrl", url);
-      });
-      // 2.获取歌曲详情
-      getSongDetail(id).then((res) => {
-        // 保存播放的歌曲详情
-        this.$store.commit("saveSongDetail", res.songs[0]);
-        // 把该歌曲存进playingList
-        this.$store.commit("addPlayinglist", this.$store.state.nowSongDetail);
-      });
-    },
-    // 进入专辑详情页
-    openAlbumDetail(id) {
-      this.$router.push({
-        path: "/zhuanjidetail",
-        query: { id: id },
-      });
-      console.log("专辑页" + id);
-    },
-    // 进入歌单详情页
-    openMonadDetail(id) {
-      this.$router.push({
-        path: "/monaddetail",
-        query: { id: id },
-      });
-      console.log("歌单页" + id);
-    },
-  },
+});
+const router = useRouter();
+const playerStore = usePlayerStore();
+
+// 鼠标是否移到元素上
+const isMouseMove = ref(false);
+// 当前鼠标移动到的行
+const currentIndex = ref(null);
+
+// 点击播放单曲
+const playClick = async (id) => {
+  const urlRes = await getSongUrl(id);
+  playerStore.saveSongUrl(urlRes.data[0].url);
+  const detailRes = await getSongDetail(id);
+  playerStore.saveSongDetail(detailRes.songs[0]);
+  playerStore.addPlayinglist(playerStore.nowSongDetail);
+};
+// 进入专辑详情页
+const openAlbumDetail = (id) => {
+  router.push({ path: "/zhuanjidetail", query: { id } });
+};
+// 进入歌单详情页
+const openMonadDetail = (id) => {
+  router.push({ path: "/monaddetail", query: { id } });
 };
 </script>
 

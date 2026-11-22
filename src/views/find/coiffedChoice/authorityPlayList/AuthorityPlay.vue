@@ -1,7 +1,7 @@
 <template>
   <!-- 官方歌单 -->
   <div class="monad">
-    <p>推荐歌单<i class="el-icon-arrow-right"></i></p>
+    <p>推荐歌单<i class="bi bi-chevron-right"></i></p>
     <div class="monad-items">
       <AuthorityPlayItem
         :monadListItem="item"
@@ -13,33 +13,22 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
 // 网络请求
 import { getSongMonad } from "@/api/findMusic/coiffedChoice/coiffedchoice";
 // 引入组件
 import AuthorityPlayItem from "./authorityPlayItem/AuthorityPlayItem.vue";
-export default {
-  name: "AuthorityPlayList",
-  data() {
-    return {
-      monadList: [],
-    };
-  },
-  components: {
-    AuthorityPlayItem,
-  },
-  methods: {
-    // 获取歌单
-    async getSongMonadBy(limit) {
-      await getSongMonad(limit).then((res) => {
-        this.monadList = res.result;
-      });
-    },
-  },
-  created() {
-    this.getSongMonadBy(6);
-  },
+
+const monadList = ref([]);
+
+// 获取推荐歌单
+const getSongMonadBy = async (limit) => {
+  const res = await getSongMonad(limit);
+  monadList.value = res.result;
 };
+
+onMounted(() => getSongMonadBy(6));
 </script>
 
 <style lang="less" scoped>

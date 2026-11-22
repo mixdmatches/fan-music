@@ -1,3 +1,5 @@
 allowBuilds:
-  core-js: set this to true or false
-  cssnano: set this to true or false
+  core-js: false
+  cssnano: false
+  esbuild: true
+  vue-demi: true

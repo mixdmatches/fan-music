@@ -4,7 +4,7 @@
       <div class="header-left">
         <img v-lazy="monadDetail.coverImgUrl" alt="" />
         <span class="playCount"
-          ><i class="el-icon-caret-right"></i>{{ playCount }}</span
+          ><i class="bi bi-caret-right-fill"></i>{{ playCount }}</span
         >
       </div>
       <div class="header-right">
@@ -12,13 +12,11 @@
           <p class="title">{{ monadDetail.name }}</p>
           <p class="description">{{ monadDetail.description }}</p>
           <div class="creator">
-            <img v-lazy="monadDetail.creator.avatarUrl" alt="" />
-            <p class="creatorname">{{ monadDetail.creator.nickname }}</p>
+            <img v-lazy="monadDetail.creator?.avatarUrl" alt="" />
+            <p class="creatorname">{{ monadDetail.creator?.nickname }}</p>
             <p class="tab">标签: {{ tags }}</p>
             <p class="creatortime">
-              {{
-                monadDetail.createTime | formatDate(monadDetail.createTime)
-              }}创建
+              {{ formatDate(monadDetail.createTime) }}创建
             </p>
           </div>
         </div>
@@ -110,7 +108,7 @@
             </span>
             <!-- 时长 -->
             <span class="totalTime">{{
-              item.dt | formatDuration(item.dt)
+              formatDuration(item.dt)
             }}</span>
           </div>
         </div>
@@ -160,7 +158,10 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { usePlayerStore } from "@/store/player";
 // 引入接口
 import {
   getMonadDetail,
@@ -174,137 +175,81 @@ import { formatDuration } from "@/common/formatDuration";
 import { formatDate } from "@/common/formatDate";
 // 引入导航组件
 import BlackTabNav from "@/components/BlackTabNav.vue";
-// vuex
-import { mapGetters } from "vuex";
-import { playingList, songUrl } from "@/store/getters";
-export default {
-  name: "MonadDetail",
-  components: {
-    BlackTabNav,
-  },
-  computed: {
-    ...mapGetters([
-      "isPlaying",
-      "songUrl",
-      "nowSongDetail",
-      "playingList",
-      "currentSecond",
-      "audio",
-    ]),
-  },
-  data() {
-    return {
-      tabs: [
-        { name: "歌曲", type: 1 },
-        { name: "评论", type: 2 },
-        // { name: "收藏者", type: 3 },
-      ],
-      type: 1,
-      monadDetail: {},
-      monadMusics: [],
-      monadComments: [],
-      hotComments: [],
-      currentIndex: null,
-      isMouseMove: false,
-    };
-  },
-  computed: {
-    id() {
-      return this.$route.query.id;
-    },
-    tags() {
-      return this.monadDetail.tags.join("/");
-    },
-    playCount() {
-      return formatNum(this.monadDetail.playCount);
-    },
-    subscribedCount() {
-      return formatNum(this.monadDetail.subscribedCount);
-    },
-  },
-  // 过滤器
-  filters: {
-    formatDuration(time) {
-      return formatDuration(time);
-    },
-    formatDate(time) {
-      return formatDate(time);
-    },
-  },
-  methods: {
-    tabClick(item) {
-      this.type = item.type;
-    },
-    // 获取歌单详情
-    getMonadDetailBy(id) {
-      getMonadDetail(id).then((res) => {
-        this.monadDetail = res.playlist;
-        console.log(this.monadDetail);
-        console.log("歌单详情");
-      });
-    },
-    // 获取歌单所有歌曲
-    getMonadMusicsBy(id) {
-      getMonadMusics(id).then((res) => {
-        this.monadMusics = res.songs;
-        console.log(this.monadMusics);
-        console.log("歌单歌曲");
-      });
-    },
-    // 获取歌单评论
-    getMonadCommentBy(id) {
-      getMonadComment(id).then((res) => {
-        this.monadComments = res.comments;
-        this.hotComments = res.hotComments;
-      });
-    },
-    // 点击播放全部
-    playAll(id) {
-      // audio.src赋值,然后自动播放第一首歌
-      // 获得第一首歌的url
-      getSongUrl(this.monadMusics[0].id).then((res) => {
-        const { url } = res.data[0];
-        // 保存歌曲Url
-        this.$store.dispatch("saveSongUrl", url);
-      });
-      // 改变播放状态
-      this.$store.dispatch("changePlayState", true);
-      // 保存当前播放歌曲详情
-      this.$store.dispatch("saveSongDetail", this.monadMusics[0]);
-      // 把歌单所有歌曲传入playingList
-      this.$store.dispatch("addAllSong", this.monadMusics);
-      console.log("播放全部" + id);
-      console.log(this.songUrl);
-    },
-    // 点击收藏
-    shoucang() {
-      console.log("收藏");
-    },
-    // 点击单首音乐
-    playClick(id) {
-      console.log("点击" + id);
-      // 获取被点击的音乐url
-      getSongUrl(id).then((res) => {
-        const { url } = res.data[0];
-        // 保存歌曲Url
-        this.$store.dispatch("saveSongUrl", url);
-      });
-      // 获取被点击的音乐详情
-      getSongDetail(id).then((res) => {
-        const detail = res.songs[0];
-        // 保存当前播放歌曲详情
-        this.$store.dispatch("saveSongDetail", detail);
-        //添加单个音乐到播放列
-        this.$store.dispatch("addPlayinglist", detail);
-      });
-    },
-  },
-  created() {
-    this.getMonadDetailBy(this.id);
-    this.getMonadMusicsBy(this.id);
-    this.getMonadCommentBy(this.id);
-  },
+
+const route = useRoute();
+const playerStore = usePlayerStore();
+
+const tabs = [
+  { name: "歌曲", type: 1 },
+  { name: "评论", type: 2 },
+];
+const type = ref(1);
+const monadDetail = ref({});
+const monadMusics = ref([]);
+const monadComments = ref([]);
+const hotComments = ref([]);
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+
+// 当前歌单 id
+const id = computed(() => route.query.id);
+// 标签拼接
+const tags = computed(() => monadDetail.value.tags?.join("/") || "");
+// 播放量 / 收藏量
+const playCount = computed(() => formatNum(monadDetail.value.playCount));
+const subscribedCount = computed(() =>
+  formatNum(monadDetail.value.subscribedCount)
+);
+
+// 切换歌曲 / 评论
+const tabClick = (item) => {
+  type.value = item.type;
 };
+// 获取歌单详情
+const getMonadDetailBy = (id) => {
+  getMonadDetail(id).then((res) => {
+    monadDetail.value = res.playlist;
+  });
+};
+// 获取歌单所有歌曲
+const getMonadMusicsBy = (id) => {
+  getMonadMusics(id).then((res) => {
+    monadMusics.value = res.songs;
+  });
+};
+// 获取歌单评论
+const getMonadCommentBy = (id) => {
+  getMonadComment(id).then((res) => {
+    monadComments.value = res.comments;
+    hotComments.value = res.hotComments;
+  });
+};
+// 点击播放全部
+const playAll = async (id) => {
+  const res = await getSongUrl(monadMusics.value[0].id);
+  playerStore.saveSongUrl(res.data[0].url);
+  playerStore.changePlayState(true);
+  playerStore.saveSongDetail(monadMusics.value[0]);
+  playerStore.addAllSong(monadMusics.value);
+};
+// 点击收藏
+const shoucang = () => {
+  console.log("收藏");
+};
+// 点击单首音乐
+const playClick = async (id) => {
+  const urlRes = await getSongUrl(id);
+  playerStore.saveSongUrl(urlRes.data[0].url);
+  const detailRes = await getSongDetail(id);
+  playerStore.saveSongDetail(detailRes.songs[0]);
+  playerStore.addPlayinglist(detailRes.songs[0]);
+};
+
+onMounted(() => {
+  getMonadDetailBy(id.value);
+  getMonadMusicsBy(id.value);
+  getMonadCommentBy(id.value);
+});
 </script>
 
 <style lang="less" scoped>

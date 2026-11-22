@@ -4,19 +4,6 @@
   </div>
 </template>
 
-<script>
-import Aside from "@/Layout/Aside.vue";
-export default {
-  name: "Main",
-  components: {
-    Aside,
-  },
-  data() {
-    return {};
-  },
-};
-</script>
-
 <style lang="less" scoped>
 #main {
   overflow-y: scroll;

@@ -1,39 +1,33 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import 'bootstrap-icons/font/bootstrap-icons.css'
+import VueLazyLoad from 'vue-lazyload'
+
 import App from './App.vue'
 import router from './router'
-import store from './store'
+import { pinia } from './store'
 
-// css
-import "@/assets/css/theme.css"
-import '@/assets/css/resetui.css';
-/**外部组件使用 */
-import ElementUI from 'element-ui'
-import 'element-ui/lib/theme-chalk/index.css'
-import 'bootstrap-icons/font/bootstrap-icons.css';
-Vue.use(ElementUI)
+// 全局样式
+import '@/assets/css/theme.css'
+import '@/assets/css/resetui.css'
+import '@/assets/css/base.css'
 
-Vue.config.productionTip = false
+// 懒加载的占位图与错误图
+import loadingImg from '@/assets/images/loadImg.gif'
+import errorImg from '@/assets/images/error.png'
 
-/**使用图片懒加载**/
-import VueLazyload from "vue-lazyload";
-Vue.use(VueLazyload, {
-  loading: require("./assets/images/loadImg.gif"),
-  error: require("./assets/images/error.png"),
+const app = createApp(App)
+
+app.use(ElementPlus)
+app.use(VueLazyLoad, {
+  loading: loadingImg,
+  error: errorImg,
   attempt: 6,
-  observer: true,
-});
+  observer: true
+})
+app.use(pinia)
+app.use(router)
 
-
-/** 全局读取localStorage */
-import { setInfo, getInfo, removeInfo } from "./utils/storage";
-Vue.prototype.setInfo = setInfo;
-Vue.prototype.getInfo = getInfo;
-Vue.prototype.removeInfo = removeInfo;
-
-new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
-// 设置默认路由
-router.push('/find')
+// 等路由就绪后再挂载，避免首屏白屏
+router.isReady().then(() => app.mount('#app'))

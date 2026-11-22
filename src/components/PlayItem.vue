@@ -23,22 +23,24 @@
   </div>
 </template>
 
-<script>
-import { mapGetters, mapMutations } from "vuex";
+<script setup>
+import { ref } from "vue";
 
-export default {
-  computed: {
-    ...mapGetters(["isPlay", "playIcon", "isLove", "loveIcon"]),
-  },
-  methods: {
-    ...mapMutations(["setPlaying", "setLoveIcon"]),
-    handleLoveIcon() {
-      this.$store.commit("setLoveIcon");
-    },
-    handlePlay() {
-      this.$store.commit("setPlaying");
-    },
-  },
+// 组件内部维护播放 / 收藏图标状态
+const isPlay = ref(false);
+const playIcon = ref("bi bi-play-fill");
+const isLove = ref(false);
+const loveIcon = ref("bi bi-heart");
+
+// 切换收藏图标
+const handleLoveIcon = () => {
+  isLove.value = !isLove.value;
+  loveIcon.value = isLove.value ? "bi bi-heart-fill" : "bi bi-heart";
+};
+// 切换播放图标
+const handlePlay = () => {
+  isPlay.value = !isPlay.value;
+  playIcon.value = isPlay.value ? "bi bi-pause" : "bi bi-play-fill";
 };
 </script>
 

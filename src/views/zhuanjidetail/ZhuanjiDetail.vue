@@ -10,8 +10,8 @@
         <div class="info">
           <p class="title">{{ zhuanjiDetail.name }}</p>
           <div class="creator">
-            <img v-lazy="zhuanjiDetail.artist.img1v1Url" alt="" />
-            <p class="creatorname">{{ zhuanjiDetail.artist.name }}</p>
+            <img v-lazy="zhuanjiDetail.artist?.img1v1Url" alt="" />
+            <p class="creatorname">{{ zhuanjiDetail.artist?.name }}</p>
             <p class="creatortime">发布</p>
           </div>
         </div>
@@ -102,7 +102,7 @@
             </span>
             <!-- 时长 -->
             <span class="totalTime">{{
-              item.dt | formatDuration(item.dt)
+              formatDuration(item.dt)
             }}</span>
           </div>
         </div>
@@ -112,7 +112,7 @@
         <div class="hotComment" v-if="hotComments.length !== 0">
           <div class="title">
             精彩评论
-            <i>{{}}</i>
+            <i></i>
           </div>
           <div class="commentItem" v-for="item in hotComments" :key="item.id">
             <img v-lazy="item.user.avatarUrl" alt="" />
@@ -131,7 +131,7 @@
         <div class="newComment">
           <div class="title">
             最新评论
-            <i>{{}}</i>
+            <i></i>
           </div>
           <div
             class="commentItem"
@@ -155,116 +155,69 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { usePlayerStore } from "@/store/player";
 // 接口
 import { getZhuanjiDetail, getZhuajiComment } from "@/api/zhuanji/zhuanji";
 import { getSongUrl, getSongDetail } from "@/api/listenMusic/listenMusic";
 // 引入函数
-import { formatNum } from "@/common/listenCount";
 import { formatDuration } from "@/common/formatDuration";
 // 引入导航组件
 import BlackTabNav from "@/components/BlackTabNav.vue";
-// vuex
-import { mapGetters } from "vuex";
-export default {
-  name: "ZhuanjiDetail",
-  components: {
-    BlackTabNav,
-  },
-  computed: {
-    id() {
-      return this.$route.query.id;
-    },
-    playCount() {
-      return formatNum(this.monadDetail.playCount);
-    },
-    subscribedCount() {
-      return formatNum(this.monadDetail.subscribedCount);
-    },
-  },
-  data() {
-    return {
-      // loading:true,
-      tabs: [
-        { name: "歌曲", type: 1 },
-        { name: "评论", type: 2 },
-        // { name: "收藏者", type: 3 },
-      ],
-      type: 1,
-      zhuanjiDetail: {},
-      zhuanjiMusics: [],
-      zhuanjiComments: [],
-      hotComments: [],
-      currentIndex: null,
-      isMouseMove: false,
-    };
-  },
-  // 过滤器
-  filters: {
-    formatDuration(time) {
-      return formatDuration(time);
-    },
-  },
-  methods: {
-    tabClick(item) {
-      this.type = item.type;
-    },
-    // 获取专辑详情,歌曲,评论
-    getZhuanjiBy(id) {
-      getZhuanjiDetail(id).then((res) => {
-        this.zhuanjiDetail = res.album;
-        this.zhuanjiMusics = res.songs;
-      });
-      getZhuajiComment(id).then((res) => {
-        this.zhuanjiComments = res.comments;
-        this.hotComments = res.hotComments;
-        console.log(this.zhuanjiComments);
-        console.log(this.hotComments);
-      });
-    },
-    // 点击播放全部
-    playAll(id) {
-      // audio.src赋值,然后自动播放第一首歌
-      // 获得第一首歌的url
-      getSongUrl(this.zhuanjiMusics[0].id).then((res) => {
-        const { url } = res.data[0];
-        // 保存歌曲Url
-        this.$store.dispatch("saveSongUrl", url);
-      });
-      // 改变播放状态
-      this.$store.dispatch("changePlayState", true);
-      // 保存当前播放歌曲详情
-      this.$store.dispatch("saveSongDetail", this.zhuanjiMusics[0]);
-      // 把歌单所有歌曲传入playingList
-      this.$store.dispatch("addAllSong", this.zhuanjiMusics);
-    },
-    // 点击收藏
-    shoucang() {
-      console.log("收藏");
-    },
-    // 点击单首音乐
-    playClick(id) {
-      console.log("点击" + id);
-      // 获取被点击的音乐url
-      getSongUrl(id).then((res) => {
-        const { url } = res.data[0];
-        // 保存歌曲Url
-        this.$store.dispatch("saveSongUrl", url);
-      });
-      // 获取被点击的音乐详情
-      getSongDetail(id).then((res) => {
-        const detail = res.songs[0];
-        // 保存当前播放歌曲详情
-        this.$store.dispatch("saveSongDetail", detail);
-        //添加单个音乐到播放列
-        this.$store.dispatch("addPlayinglist", detail);
-      });
-    },
-  },
-  created() {
-    this.getZhuanjiBy(this.id);
-  },
+
+const route = useRoute();
+const playerStore = usePlayerStore();
+
+const tabs = [
+  { name: "歌曲", type: 1 },
+  { name: "评论", type: 2 },
+];
+const type = ref(1);
+const zhuanjiDetail = ref({});
+const zhuanjiMusics = ref([]);
+const zhuanjiComments = ref([]);
+const hotComments = ref([]);
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+
+// 当前专辑 id
+const id = computed(() => route.query.id);
+
+// 切换歌曲 / 评论
+const tabClick = (item) => {
+  type.value = item.type;
 };
+// 获取专辑详情、歌曲、评论
+const getZhuanjiBy = (id) => {
+  getZhuanjiDetail(id).then((res) => {
+    zhuanjiDetail.value = res.album;
+    zhuanjiMusics.value = res.songs;
+  });
+  getZhuajiComment(id).then((res) => {
+    zhuanjiComments.value = res.comments;
+    hotComments.value = res.hotComments;
+  });
+};
+// 点击播放全部
+const playAll = async () => {
+  const res = await getSongUrl(zhuanjiMusics.value[0].id);
+  playerStore.saveSongUrl(res.data[0].url);
+  playerStore.changePlayState(true);
+  playerStore.saveSongDetail(zhuanjiMusics.value[0]);
+  playerStore.addAllSong(zhuanjiMusics.value);
+};
+// 点击单首音乐
+const playClick = async (id) => {
+  const urlRes = await getSongUrl(id);
+  playerStore.saveSongUrl(urlRes.data[0].url);
+  const detailRes = await getSongDetail(id);
+  playerStore.saveSongDetail(detailRes.songs[0]);
+  playerStore.addPlayinglist(detailRes.songs[0]);
+};
+
+onMounted(() => getZhuanjiBy(id.value));
 </script>
 
 <style lang="less" scoped>

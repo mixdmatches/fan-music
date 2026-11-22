@@ -26,7 +26,7 @@
     </span>
     <!-- 播放量 -->
     <span class="playCount"
-      ><i class="el-icon-caret-right"></i>{{ listenCount }}</span
+      ><i class="bi bi-caret-right-fill"></i>{{ listenCount }}</span
     >
     <!-- 底部文字描述 -->
     <span class="text-bottom">
@@ -35,89 +35,52 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { usePlayerStore } from "@/store/player";
 import { formatNum } from "@/common/listenCount";
-import { mapGetters } from "vuex";
 // 引入接口
 import { getMonadMusics } from "@/api/findMusic/monadPlace/monadPlace";
-import { getSongUrl, getSongDetail } from "@/api/listenMusic/listenMusic";
-export default {
-  name: "AuthorityPlayItem",
-  props: {
-    monadListItem: {
-      type: Object,
-    },
-    monadIndex: {
-      type: Number,
-    },
-  },
-  data() {
-    return {
-      currentIndex: null,
-      isMouseMove: false,
-      monadMusics: [],
-    };
-  },
-  computed: {
-    ...mapGetters([
-      "isPlaying",
-      "songUrl",
-      "nowSongDetail",
-      "playingList",
-      "currentSecond",
-      "audio",
-    ]),
-  },
-  methods: {
-    // 进入歌单详情页
-    openDetail(id) {
-      this.$router.push({
-        path: "/monaddetail",
-        query: { id: id },
-      });
-      console.log("歌单页" + id);
-    },
-    // 获取歌单所有歌曲
-    async getMonadMusicsBy(id) {
-      await getMonadMusics(id).then((res) => {
-        this.monadMusics = res.songs;
-      });
-    },
-    // 点击播放全部
-    async playAll(id) {
-      // audio.src赋值,然后自动播放第一首歌
-      // 获得第一首歌的url
-      await getSongUrl(this.monadMusics[0].id).then((res) => {
-        const { url } = res.data[0];
-        // 保存歌曲Url
-        this.$store.dispatch("saveSongUrl", url);
-      });
-      // 改变播放状态
-      this.$store.dispatch("changePlayState", true);
-      // 保存当前播放歌曲详情
-      this.$store.dispatch("saveSongDetail", this.monadMusics[0]);
-      // 把歌单所有歌曲传入playingList
-      this.$store.dispatch("addAllSong", this.monadMusics);
-    },
-  },
-  // 进入歌单详情页
-  openDetail(id) {
-    this.$router.push({
-      path: "/monaddetail",
-      query: { id: id },
-    });
-    console.log("歌单页" + id);
-  },
+import { getSongUrl } from "@/api/listenMusic/listenMusic";
 
-  computed: {
-    listenCount() {
-      return formatNum(this.monadListItem.playCount);
-    },
+const props = defineProps({
+  monadListItem: {
+    type: Object,
   },
-  created() {
-    this.getMonadMusicsBy(this.monadListItem.id);
+  monadIndex: {
+    type: Number,
   },
+});
+const router = useRouter();
+const playerStore = usePlayerStore();
+
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+const monadMusics = ref([]);
+
+// 播放量格式化
+const listenCount = computed(() => formatNum(props.monadListItem.playCount));
+
+// 进入歌单详情页
+const openDetail = (id) => {
+  router.push({ path: "/monaddetail", query: { id } });
 };
+// 获取歌单所有歌曲
+const getMonadMusicsBy = async (id) => {
+  const res = await getMonadMusics(id);
+  monadMusics.value = res.songs;
+};
+// 点击播放全部
+const playAll = async (id) => {
+  const res = await getSongUrl(monadMusics.value[0].id);
+  playerStore.saveSongUrl(res.data[0].url);
+  playerStore.changePlayState(true);
+  playerStore.saveSongDetail(monadMusics.value[0]);
+  playerStore.addAllSong(monadMusics.value);
+};
+
+onMounted(() => getMonadMusicsBy(props.monadListItem.id));
 </script>
 
 <style lang="less" scoped>

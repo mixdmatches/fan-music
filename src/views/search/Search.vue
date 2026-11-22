@@ -56,85 +56,47 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 // 网络请求
 import { getSearchResult } from "@/api/search/search";
-// 引入格式化时长函数
-import { formatDuration } from "@/common/formatDuration";
 // 引入导航组件
 import BlackTabNav from "@/components/BlackTabNav.vue";
 // 引入搜索结果组件
 import SearchResult from "./searchResult/SearchResult.vue";
-export default {
-  name: "Search",
-  components: {
-    BlackTabNav,
-    SearchResult,
-  },
-  data() {
-    return {
-      // 搜索结果
-      result: {},
-      // 歌曲列表
-      songList: [],
-      // 专辑列表
-      albums: [],
-      // 歌手
-      singerList: [],
-      // 搜索种类
-      searchTypeList: [
-        { name: "单曲", type: 1, thead: ["标题", "专辑", "喜欢", "时长"] },
-        { name: "专辑", type: 10, thead: ["标题", "作者", "时间"] },
-        { name: "歌手", type: 100 },
-        {
-          name: "歌单",
-          type: 1000,
-          thead: ["标题", "歌曲数", "创作者", "播放量"],
-        },
-        // { name: "用户", type: 1002 },
-        // { name: "MV", type: 1004 },
-        // { name: "歌词", type: 1006 },
-        // { name: "电台", type: 1009 },
-        // { name: "视频", type: 1014 },
-        // { name: "综合", type: 1018 },
-        // { name: "声音", type: 2000, thead: ["标题", "播放量", "时长"] },
-      ],
-      thead: [],
-      type: 1,
-      limit: 40,
-      offset: 0,
-    };
-  },
-  methods: {
-    async getSearchResultBy(keyWords, limit, offset, type) {
-      await getSearchResult(keyWords, limit, offset, type).then((res) => {
-        this.result = res.result;
-        this.songList = res.result.songs;
-        this.albums = res.result.albums;
-      });
-    },
-    tabClick(item) {
-      this.type = item.type;
-      this.getSearchResultBy(this.keyword, this.limit, this.offset, this.type);
-    },
-    // 格式化时长
-    // formatDurationBy(){
-    //   formatDuration()
-    // }
-  },
-  created() {
-    this.getSearchResultBy(this.keyword, this.limit, this.offset, this.type);
-    console.log(this.songList);
-  },
-  computed: {
-    keyword() {
-      return this.$route.query.keyword;
-    },
-    totalTime() {
-      return formatDuration(item.dt);
-    },
-  },
+
+const route = useRoute();
+
+// 搜索关键词
+const keyword = computed(() => route.query.keyword);
+// 搜索结果
+const result = ref({});
+// 搜索种类
+const searchTypeList = [
+  { name: "单曲", type: 1, thead: ["标题", "专辑", "喜欢", "时长"] },
+  { name: "专辑", type: 10, thead: ["标题", "作者", "时间"] },
+  { name: "歌手", type: 100 },
+  { name: "歌单", type: 1000, thead: ["标题", "歌曲数", "创作者", "播放量"] },
+];
+const type = ref(1);
+const limit = 40;
+const offset = 0;
+
+// 根据关键词和类型搜索
+const getSearchResultBy = async (keyWords, limit, offset, type) => {
+  const res = await getSearchResult(keyWords, limit, offset, type);
+  result.value = res.result;
 };
+// 切换搜索类型
+const tabClick = (item) => {
+  type.value = item.type;
+  getSearchResultBy(keyword.value, limit, offset, type.value);
+};
+
+onMounted(() =>
+  getSearchResultBy(keyword.value, limit, offset, type.value)
+);
 </script>
 
 <style lang="less" scoped>

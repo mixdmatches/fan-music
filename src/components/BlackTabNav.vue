@@ -12,25 +12,22 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "BlackTabNav",
-  data() {
-    return {
-      currentIndex: 0,
-    };
+<script setup>
+import { ref } from "vue";
+
+defineProps({
+  TypeList: {
+    type: Array,
   },
-  props: {
-    TypeList: {
-      type: Array,
-    },
-  },
-  methods: {
-    tabItemClick(index, item) {
-      this.currentIndex = index;
-      this.$emit("tabClick", item);
-    },
-  },
+});
+const emit = defineEmits(["tabClick"]);
+
+const currentIndex = ref(0);
+
+// 点击黑色导航标签，向外抛出选中项
+const tabItemClick = (index, item) => {
+  currentIndex.value = index;
+  emit("tabClick", item);
 };
 </script>
 

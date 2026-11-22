@@ -56,51 +56,47 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "NewMusicItem",
-  props: {
-    newSongItem: {
-      type: Object,
-    },
-    newSongIndex: {
-      type: Number,
-    },
+<script setup>
+import { ref, computed } from "vue";
+import { usePlayerStore } from "@/store/player";
+
+const props = defineProps({
+  newSongItem: {
+    type: Object,
   },
-  computed: {
-    isPlayItem() {
-      return (
-        this.$store.state.nowSongDetail.id === this.newSongItem.id &&
-        this.$store.state.isPlaying
-      );
-    },
+  newSongIndex: {
+    type: Number,
   },
-  data() {
-    return {
-      currentIndex: null,
-      isMouseMove: false,
-      // 第一次点击
-      isFirstClick: true,
-    };
-  },
-  methods: {
-    playClick(newSongItem) {
-      this.$emit("playClick", newSongItem);
-    },
-    // 播放音乐
-    playMusic() {
-      // 是第一次点击播放就退出,防止跟playClick冲突而报错
-      if (this.isFirstClick) {
-        this.isFirstClick = false;
-        return;
-      }
-      this.$store.state.audio.play();
-    },
-    // 暂停音乐
-    pauseMusic() {
-      this.$store.state.audio.pause();
-    },
-  },
+});
+const emit = defineEmits(["playClick"]);
+const playerStore = usePlayerStore();
+
+const currentIndex = ref(null);
+const isMouseMove = ref(false);
+// 第一次点击
+const isFirstClick = ref(true);
+
+// 当前歌曲是否正在播放
+const isPlayItem = computed(
+  () => playerStore.nowSongDetail.id === props.newSongItem.id && playerStore.isPlaying
+);
+
+// 向外抛出点击的歌曲
+const playClick = (newSongItem) => {
+  emit("playClick", newSongItem);
+};
+// 播放音乐
+const playMusic = () => {
+  // 第一次点击交给 playClick，避免重复触发
+  if (isFirstClick.value) {
+    isFirstClick.value = false;
+    return;
+  }
+  playerStore.audio.play();
+};
+// 暂停音乐
+const pauseMusic = () => {
+  playerStore.audio.pause();
 };
 </script>
 
